@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>1440TIME™ PLANNER</title>
+    <style>
+        /* CSS Variables for Consistent Theming */
+        :root {
+            --background-color: #000;
+            --container-bg: #111;
+            --primary-color: #00ff00;
+            --secondary-color: #ffff00;
+            --error-color: #ff0000;
+            --task-bg: #222;
+            --button-bg: #333;
+            --button-hover-bg: #444;
+            --remove-btn-bg: #ff3333;
+            --text-color: #fff;
+            --input-bg: #222;
+            --input-border: #444;
+            --alert-active-bg: #ffff00;
+            --alert-inactive-bg: #555;
+        }
+
+        * {
+            -webkit-tap-highlight-color: transparent;
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            min-height: 100vh;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            touch-action: manipulation;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 600px;
+            margin: 20px;
+            padding: 20px;
+            background-color: var(--container-bg);
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: clamp(24px, 4vw, 36px);
+            margin-bottom: 20px;
+            text-align: center;
+            color: var(--primary-color);
+            text-shadow: 0 0 10px var(--primary-color);
+        }
+
+        .time-display {
+            font-size: clamp(28px, 15vw, 72px);
+            text-align: center;
+            margin: 20px 0;
+            color: var(--primary-color);
+            text-shadow: 0 0 10px var(--primary-color);
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        label {
+            font-size: 16px;
+        }
+
+        input[type="time"],
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--input-border);
+            border-radius: 8px;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            font-size: 16px;
+            appearance: none;
+        }
+
+        input[type="time"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            background-color: var(--secondary-color);
+            color: black;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            min-height: 44px;
+            touch-action: manipulation;
+            transition: transform 0.1s, background-color 0.3s;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .quick-times {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        .quick-times button {
+            flex: 1;
+            background-color: var(--button-bg);
+            color: var(--text-color);
+            transition: background-color 0.3s;
+        }
+
+        .quick-times button:hover {
+            background-color: var(--button-hover-bg);
+        }
+
+        .task-list {
+            margin-top: 20px;
+        }
+
+        .task {
+            background-color: var(--task-bg);
+            padding: 15px;
+            margin: 5px 0;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .task button {
+            background-color: var(--remove-btn-bg);
+            color: var(--text-color);
+            padding: 8px 15px;
+            white-space: nowrap;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .task button:hover {
+            background-color: #cc0000;
+        }
+
+        .remaining-time {
+            text-align: center;
+            font-size: clamp(18px, 6vw, 28px);
+            margin: 20px 0;
+            color: var(--primary-color);
+        }
+
+        .alert-settings {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: var(--task-bg);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toggle-button {
+            background-color: var(--alert-inactive-bg);
+            flex: 1;
+            min-width: 120px;
+            transition: background-color 0.3s;
+        }
+
+        .toggle-button.active {
+            background-color: var(--alert-active-bg);
+        }
+
+        .alert-settings button {
+            width: 100%;
+        }
+
+        /* Responsive Adjustments */
+        @media (min-width: 600px) {
+            .input-group {
+                flex-direction: row;
+                align-items: flex-end;
+            }
+
+            .input-group > * {
+                flex: 1;
+            }
+
+            .input-group button {
+                flex: none;
+                width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="container" role="main">
+        <header>
+            <h1>1440TIME™ PLANNER</h1>
+        </header>
+        
+        <!-- End Time Setting -->
+        <section class="input-group">
+            <div>
+                <label for="endTime">Set End Time:</label>
+                <input type="time" id="endTime" aria-describedby="endTimeHelp" onchange="calculateTimeRemaining()">
+                <small id="endTimeHelp">Choose a time or use quick add buttons.</small>
+            </div>
+            <div class="quick-times" role="group" aria-label="Quick add time buttons">
+                <button type="button" onclick="addMinutes(30)">+30m</button>
+                <button type="button" onclick="addMinutes(60)">+1h</button>
+                <button type="button" onclick="addMinutes(120)">+2h</button>
+            </div>
+        </section>
+
+        <!-- Time Display -->
+        <div class="time-display" id="timeDisplay" aria-live="polite">
+            0
+        </div>
+
+        <!-- Remaining Free Time -->
+        <div class="remaining-time" id="remainingFreeTime" aria-live="polite">
+            On-TIME™ (Free Time): 0
+        </div>
+
+        <!-- Alert Settings -->
+        <section class="alert-settings">
+            <label for="alertToggle">Alert Settings:</label>
+            <button id="alertToggle" class="toggle-button" onclick="toggleAlert()" aria-pressed="false">Alerts: OFF</button>
+            <button id="testSound" onclick="playAlert()">Test Sound</button>
+        </section>
+
+        <!-- Task Management -->
+        <section class="input-group">
+            <div>
+                <label for="taskName">Task Name:</label>
+                <input type="text" id="taskName" placeholder="Enter task name" aria-required="true">
+            </div>
+            <div>
+                <label for="taskDuration">Duration (Minutes):</label>
+                <input type="number" id="taskDuration" placeholder="e.g., 30" min="1" aria-required="true">
+            </div>
+            <button type="button" onclick="addTask()">Add Task</button>
+        </section>
+
+        <!-- Task List -->
+        <section class="task-list" id="taskList" aria-label="List of tasks">
+            <!-- Tasks will be dynamically added here -->
+        </section>
+    </main>
+
+    <script>
+        // Application State
+        let tasks = [];
+        let endTimeMinutes = 0;
+        let alertEnabled = false;
+        let alertPlayed = false;
+        let intervalId = null;
+
+        // Load data from localStorage on page load
+        window.onload = function() {
+            loadData();
+            updateDisplay();
+        };
+
+        // Save data to localStorage
+        function saveData() {
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+            localStorage.setItem('endTimeMinutes', endTimeMinutes);
+            localStorage.setItem('alertEnabled', alertEnabled);
+            localStorage.setItem('alertPlayed', alertPlayed);
+        }
+
+        // Load data from localStorage
+        function loadData() {
+            const savedTasks = JSON.parse(localStorage.getItem('tasks'));
+            const savedEndTime = parseInt(localStorage.getItem('endTimeMinutes'), 10);
+            const savedAlert = JSON.parse(localStorage.getItem('alertEnabled'));
+            const savedAlertPlayed = JSON.parse(localStorage.getItem('alertPlayed'));
+
+            if (Array.isArray(savedTasks)) tasks = savedTasks;
+            if (!isNaN(savedEndTime)) endTimeMinutes = savedEndTime;
+            if (typeof savedAlert === 'boolean') {
+                alertEnabled = savedAlert;
+                const alertButton = document.getElementById('alertToggle');
+                alertButton.textContent = `Alerts: ${alertEnabled ? 'ON' : 'OFF'}`;
+                alertButton.classList.toggle('active', alertEnabled);
+                alertButton.setAttribute('aria-pressed', alertEnabled);
+            }
+            if (typeof savedAlertPlayed === 'boolean') alertPlayed = savedAlertPlayed;
+        }
+
+        // Toggle Alert Settings
+        function toggleAlert() {
+            alertEnabled = !alertEnabled;
+            alertPlayed = false;
+            const button = document.getElementById('alertToggle');
+            button.textContent = `Alerts: ${alertEnabled ? 'ON' : 'OFF'}`;
+            button.classList.toggle('active', alertEnabled);
+            button.setAttribute('aria-pressed', alertEnabled);
+            saveData();
+            updateDisplay();
+        }
+
+        // Add Minutes via Quick Add Buttons
+        function addMinutes(minutes) {
+            const now = new Date();
+            const futureTime = new Date(now.getTime() + minutes * 60000);
+            const timeString = futureTime.toTimeString().slice(0,5);
+            document.getElementById('endTime').value = timeString;
+            calculateTimeRemaining();
+        }
+
+        // Calculate Time Remaining until End Time
+        function calculateTimeRemaining() {
+            const endTimeInput = document.getElementById('endTime').value;
+            if (!endTimeInput) return;
+
+            const now = new Date();
+            const [hours, minutes] = endTimeInput.split(':').map(Number);
+            const endTime = new Date(now);
+            endTime.setHours(hours, minutes, 0, 0);
+
+            if (endTime < now) {
+                endTime.setDate(endTime.getDate() + 1);
+            }
+
+            const diffMilliseconds = endTime - now;
+            endTimeMinutes = Math.floor(diffMilliseconds / 60000);
+            alertPlayed = false;
+
+            if (intervalId) {
+                clearInterval(intervalId);
+            }
+
+            updateDisplay();
+            intervalId = setInterval(updateRemainingTime, 1000);
+            saveData();
+        }
+
+        // Update Remaining Time Every Second
+        function updateRemainingTime() {
+            const now = new Date();
+            const endTime = new Date();
+            const endTimeInput = document.getElementById('endTime').value;
+
+            if (!endTimeInput) return;
+
+            const [hours, minutes] = endTimeInput.split(':').map(Number);
+            endTime.setHours(hours, minutes, 0, 0);
+
+            if (endTime < now) {
+                endTime.setDate(endTime.getDate() + 1);
+            }
+
+            const diffMilliseconds = endTime - now;
+            endTimeMinutes = Math.floor(diffMilliseconds / 60000);
+            updateDisplay();
+            saveData();
+        }
+
+        // Add a New Task
+        function addTask() {
+            const nameInput = document.getElementById('taskName');
+            const durationInput = document.getElementById('taskDuration');
+            const name = sanitizeInput(nameInput.value.trim());
+            const duration = parseInt(durationInput.value, 10);
+
+            if (!name) {
+                alert('Please enter a task name.');
+                return;
+            }
+
+            if (isNaN(duration) || duration <= 0) {
+                alert('Please enter a valid duration in minutes.');
+                return;
+            }
+
+            tasks.push({ name, duration });
+            nameInput.value = '';
+            durationInput.value = '';
+            updateDisplay();
+            saveData();
+        }
+
+        // Remove a Task by Index
+        function removeTask(index) {
+            tasks.splice(index, 1);
+            updateDisplay();
+            saveData();
+        }
+
+        // Update Display Elements
+        function updateDisplay() {
+            renderTasks();
+            updateTimeDisplay();
+            checkAlerts();
+        }
+
+        // Render Tasks to the DOM
+        function renderTasks() {
+            const taskList = document.getElementById('taskList');
+            taskList.innerHTML = '';
+
+            tasks.forEach((task, index) => {
+                const taskElement = document.createElement('div');
+                taskElement.className = 'task';
+                taskElement.innerHTML = `
+                    <span>${task.name} - ${task.duration} min</span>
+                    <button type="button" onclick="removeTask(${index})" aria-label="Remove task ${task.name}">Remove</button>
+                `;
+                taskList.appendChild(taskElement);
+            });
+        }
+
+        // Update Time Display
+        function updateTimeDisplay() {
+            const totalTaskMinutes = tasks.reduce((sum, task) => sum + task.duration, 0);
+            const remainingFree = endTimeMinutes - totalTaskMinutes;
+
+            document.getElementById('timeDisplay').textContent = 
+                endTimeMinutes > 0 ? formatTime(endTimeMinutes) : '0';
+
+            const remainingTimeElement = document.getElementById('remainingFreeTime');
+            remainingTimeElement.textContent = `On-TIME™ (Free Time): ${Math.max(0, remainingFree)}`;
+            remainingTimeElement.style.color = remainingFree < 0 ? 'var(--error-color)' : 'var(--primary-color)';
+        }
+
+        // Format Time from Minutes to "Xh Ym"
+        function formatTime(minutes) {
+            const hrs = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            return `${hrs}h ${mins}m`;
+        }
+
+        // Check and Trigger Alerts if Necessary
+        function checkAlerts() {
+            const totalTaskMinutes = tasks.reduce((sum, task) => sum + task.duration, 0);
+            const remainingFree = endTimeMinutes - totalTaskMinutes;
+
+            if (alertEnabled && remainingFree <= 0 && !alertPlayed) {
+                playAlert();
+                alertPlayed = true;
+                saveData();
+            }
+        }
+
+        // Play Alert Sounds and Notifications
+        async function playAlert() {
+            // Vibrate with Enhanced Pattern
+            if ('vibrate' in navigator) {
+                // Enhanced vibration pattern: longer and more noticeable
+                navigator.vibrate([500, 200, 500, 200, 500]);
+            }
+
+            // Play beep sounds
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            function playBeep(frequency, startTime, duration) {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.type = 'square';
+                oscillator.frequency.value = frequency;
+                
+                gainNode.gain.setValueAtTime(0.3, startTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration - 0.05);
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.start(startTime);
+                oscillator.stop(startTime + duration);
+            }
+            
+            const now = audioContext.currentTime;
+            for(let i = 0; i < 3; i++) {
+                playBeep(880, now + (i * 0.3), 0.2);
+            }
+
+            // Request Notification Permission if not already granted
+            if ('Notification' in window) {
+                if (Notification.permission === "granted") {
+                    new Notification("1440TIME™ Alert", {
+                        body: "It's time to rock!",
+                    });
+                } else if (Notification.permission !== "denied") {
+                    try {
+                        const permission = await Notification.requestPermission();
+                        if (permission === "granted") {
+                            new Notification("1440TIME™ Alert", {
+                                body: "It's time to rock!",
+                            });
+                        }
+                    } catch (error) {
+                        console.error("Notification permission error:", error);
+                    }
+                }
+            }
+
+            // Add a delay before voice
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            // Play voice alert
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance("It's time to rock!");
+                utterance.rate = 0.9;
+                utterance.pitch = 1.2;
+                utterance.volume = 1.0;
+                
+                // Load voices and select a female voice if available
+                const voices = speechSynthesis.getVoices();
+                if (voices.length === 0) {
+                    // Some browsers load voices asynchronously
+                    speechSynthesis.onvoiceschanged = () => {
+                        const updatedVoices = speechSynthesis.getVoices();
+                        const femaleVoice = updatedVoices.find(voice => 
+                            voice.name.toLowerCase().includes('female') || 
+                            voice.name.toLowerCase().includes('woman')
+                        );
+                        
+                        if (femaleVoice) {
+                            utterance.voice = femaleVoice;
+                        }
+                        
+                        speechSynthesis.speak(utterance);
+                    };
+                } else {
+                    const femaleVoice = voices.find(voice => 
+                        voice.name.toLowerCase().includes('female') || 
+                        voice.name.toLowerCase().includes('woman')
+                    );
+                    
+                    if (femaleVoice) {
+                        utterance.voice = femaleVoice;
+                    }
+                    
+                    speechSynthesis.speak(utterance);
+                }
+            }
+        }
+
+        // Play Alert Sound Manually (Test)
+        function playAlertManually() {
+            playAlert();
+        }
+
+        // Sanitize User Input to Prevent XSS
+        function sanitizeInput(input) {
+            const div = document.createElement('div');
+            div.textContent = input;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
